@@ -1,0 +1,22 @@
+{
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/api/forgot-password",
+      "handler": "auth.forgotPassword",
+      "config": {
+        "policies": [],
+        "prefix": ""
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/reset-password",
+      "handler": "auth.resetPassword",
+      "config": {
+        "policies": [],
+        "prefix": ""
+      }
+    }
+  ]
+}
