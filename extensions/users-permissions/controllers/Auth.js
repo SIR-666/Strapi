@@ -124,4 +124,101 @@ module.exports = {
 
     ctx.send({ message: "Password has been reset successfully" });
   },
+
+  async register(ctx) {
+    const { username, email, password } = ctx.request.body;
+
+    // Validasi input dasar
+    if (!username || !email || !password) {
+      return ctx.badRequest("Username, email and password are required");
+    }
+
+    if (!username || username.trim() === "") {
+      return ctx.badRequest("Employee number is required");
+    }
+
+    if (password.length < 6) {
+      return ctx.badRequest("Password must be at least 6 characters");
+    }
+
+    // Validasi format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return ctx.badRequest("Invalid email format");
+    }
+
+    // Panggil service validasi eksternal
+    let check;
+    try {
+      check = await fetch("http://10.24.0.155:3030/api/validate-identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nik: username }),
+      });
+    } catch (err) {
+      return ctx.badRequest("Validation service unavailable");
+    }
+
+    // Setelah fetch
+    const checkJson = await check.json();
+    if (!checkJson.success) {
+      return ctx.badRequest("NIK is not valid");
+    }
+
+    // Cek user dengan username sama
+    const existingUser = await strapi
+      .query("user", "users-permissions")
+      .findOne({ username });
+
+    if (existingUser) {
+      return ctx.badRequest("NIK is already taken");
+    }
+
+    // Cek user dengan email sama
+    const existingEmail = await strapi
+      .query("user", "users-permissions")
+      .findOne({ email: email.toLowerCase() });
+
+    if (existingEmail) {
+      return ctx.badRequest("Email is already registered");
+    }
+
+    // Hash password
+    const hashedPassword = await strapi.plugins[
+      "users-permissions"
+    ].services.user.hashPassword({ password });
+
+    // Cari role default "authenticated"
+    const defaultRole = await strapi
+      .query("role", "users-permissions")
+      .findOne({ type: "authenticated" });
+
+    if (!defaultRole) {
+      return ctx.badRequest("No default role found");
+    }
+
+    // Buat user baru
+    const newUser = await strapi.query("user", "users-permissions").create({
+      username,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: defaultRole.id,
+      confirmed: true, // set true jika tidak pakai email confirmation
+      blocked: false,
+    });
+
+    // Issue JWT
+    const jwt = strapi.plugins["users-permissions"].services.jwt.issue({
+      id: newUser.id,
+    });
+
+    // Hilangkan password dari response
+    delete newUser.password;
+
+    return ctx.send({
+      message: "User registered successfully",
+      jwt,
+      user: newUser,
+    });
+  },
 };

@@ -17,6 +17,15 @@
         "policies": [],
         "prefix": ""
       }
+    },
+    {
+      "method": "POST",
+      "path": "/api/register",
+      "handler": "auth.register",
+      "config": {
+        "policies": [],
+        "prefix": ""
+      }
     }
   ]
 }
