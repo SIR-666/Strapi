@@ -1,3 +1,4 @@
+const fetch = require("node-fetch");
 const { sanitizeEntity } = require("strapi-utils");
 const crypto = require("crypto");
 const _ = require("lodash");
