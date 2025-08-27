@@ -206,6 +206,7 @@ module.exports = {
       role: defaultRole.id,
       confirmed: true, // set true jika tidak pakai email confirmation
       blocked: false,
+      provider: "local",
     });
 
     // Issue JWT
